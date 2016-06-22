@@ -1,0 +1,31 @@
+{
+  "name": "amqplib-rpc-plus",
+  "version": "0.1.0",
+  "description": "AMQP-RPC library",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Miwwa/amqplib-rpc-plus.git"
+  },
+  "keywords": [
+    "amqp",
+    "rpc",
+    "rabbitmq",
+    "publish",
+    "subscribe",
+    "amqplib"
+  ],
+  "author": "Miwwa <eremin.ms92@gmail.com> (https://github.com/Miwwa)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Miwwa/amqplib-rpc-plus/issues"
+  },
+  "homepage": "https://github.com/Miwwa/amqplib-rpc-plus#readme",
+  "dependencies": {
+    "amqplib": "^0.4.2",
+    "node-uuid": "^1.4.7"
+  }
+}
