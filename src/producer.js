@@ -9,6 +9,7 @@ class Producer {
     this._amqp        = amqp;
     this._rpcQueue    = null;
     this._rpcWaitings = new Map();
+    this._timers      = new Map();
   }
 
   _createRpcQueue () {
@@ -43,17 +44,28 @@ class Producer {
       resPromise.resolve(parsers.in(msg));
       this._rpcWaitings.delete(corrId);
     }
-  }
-
-  publishOrSendToQueue (queue, msg, options) {
-    if (!options.routingKey) {
-      return this._amqp.channel.then(channel => channel.sendToQueue(queue, msg, options));
-    } else {
-      return this._amqp.channel.then(channel => channel.publish(queue, options.routingKey, msg, options));
+    let resTimer = this._timers.get(corrId);
+    if (resTimer) {
+      clearInterval(resTimer);
+      this._timers.delete(corrId);
     }
   }
 
-  produce (queue, msg, options) {
+  sendToQueue (queue, msg, options) {
+    return this._amqp.channel.then(channel => channel.sendToQueue(queue, msg, options));
+  }
+
+  send (queue, msg, options) {
+    options = Object.assign({
+      persistent: true,
+      durable:    true
+    }, options);
+    if (!msg) msg = null;
+
+    return this.sendToQueue(queue, parsers.out(msg, options), options);
+  }
+
+  rpc (queue, msg, options) {
     options = Object.assign({
       persistent: true,
       durable:    true,
@@ -62,37 +74,31 @@ class Producer {
     if (!msg) msg = null;
 
     return new Promise(resolve => {
-      if (options.rpc) {
-        return this._createRpcQueue()
-        .then(() => {
+      this._createRpcQueue()
+      .then(() => {
+        let corrId            = uuid.v4();
+        options.correlationId = corrId;
+        options.replyTo       = this._rpcQueue;
 
-          let corrId            = uuid.v4();
-          options.correlationId = corrId;
-          options.replyTo       = this._rpcQueue;
+        let p = Promise.defer();
+        this._rpcWaitings.set(corrId, p);
 
-          let p = Promise.defer();
-          this._rpcWaitings.set(corrId, p);
+        let t = setTimeout(() => {
+          let rpc = this._rpcWaitings.get(corrId);
+          if (rpc) {
+            rpc.reject(new TimeoutError(`message "${corrId}" timeout after ${options.expiration}`));
+            this._rpcWaitings.delete(corrId);
+          }
+          this._timers.delete(corrId);
+        }, options.expiration);
+        this._timers.set(corrId, t);
 
-          setTimeout(() => {
-            let rpc = this._rpcWaitings.get(corrId);
-            if (rpc) {
-              rpc.reject(new TimeoutError(`message "${corrId}" timeout after ${options.expiration}`));
-              this._rpcWaitings.delete(corrId);
-            }
-          }, options.expiration);
+        //amqp expiration need be a string
+        options.expiration = options.expiration.toString();
+        this.sendToQueue(queue, parsers.out(msg, options), options);
 
-          //amqp expiration need be a string
-          options.expiration = options.expiration.toString();
-          this.publishOrSendToQueue(queue, parsers.out(msg, options), options);
-
-          return resolve(this._rpcWaitings.get(corrId).promise);
-        });
-      } else {
-        return resolve(this.publishOrSendToQueue(queue, parsers.out(msg, options), options));
-      }
-    })
-    .catch(e => {
-      throw e;
+        return resolve(this._rpcWaitings.get(corrId).promise);
+      });
     });
   }
 }

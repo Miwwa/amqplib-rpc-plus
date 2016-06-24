@@ -8,13 +8,12 @@ for (let j = 0; j < 1000000; j++) {
 }
 
 function call (i, cb) {
-  p1.produce('q-test:plus', {time: Date.now()}, {
-    rpc: true,
+  p1.rpc('q-test:plus', {time: Date.now()}, {
     expiration: 1000,
     timestamp: Date.now()
   })
   .then(function callRes (res) {
-    // console.log('q-test:plus', res);
+    console.log('q-test:plus', res);
     return 0;
   })
   .catch(function callErr (err) {
@@ -28,23 +27,16 @@ function call (i, cb) {
 }
 
 function call2 (i, cb) {
-  p1.produce('q-test:product', {time: Date.now()}, {
-    rpc: true,
-    expiration: 500,
-    timestamp: Date.now()
-  })
+  p1.send('q-test:product', {time: Date.now()})
   .then(function callRes (res) {
-    // console.log('q-test:plus', res);
+    console.log('q-test:product', res);
     return 0;
   })
   .catch(function callErr (err) {
-    console.error('q-test:plus err', err);
+    console.error('q-test:product err', err);
     return err;
   })
-  .then(() => {
-    // console.log('q-test:plus then', arguments);
-    cb();
-  });
+  .then(() => cb());
 }
 
 // const async = require('async');
