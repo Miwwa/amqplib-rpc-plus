@@ -22,6 +22,7 @@ class Consumer {
         return new Promise((resolve) => {
           return resolve(callback(parsers.in(msg)));
         })
+        .catch(e => e)
         .then(content => {
           return this._checkRpc(content, msg);
         })
