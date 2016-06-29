@@ -41,7 +41,12 @@ class Producer {
     let corrId     = msg.properties.correlationId;
     let resPromise = this._rpcWaitings.get(corrId);
     if (resPromise) {
-      resPromise.resolve(parsers.in(msg));
+      let content = parsers.in(msg);
+      if (content.isError)
+        resPromise.reject(content.data);
+      else
+        resPromise.resolve(content.data);
+
       this._rpcWaitings.delete(corrId);
     }
     let resTimer = this._timers.get(corrId);

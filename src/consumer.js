@@ -22,9 +22,14 @@ class Consumer {
         return new Promise((resolve) => {
           return resolve(callback(parsers.in(msg)));
         })
-        .catch(e => e)
+        .catch(e => {
+          return {
+            isError: true,
+            data: e.toString()
+          }
+        })
         .then(content => {
-          return this._checkRpc(content, msg);
+          return this._checkRpc(content.isError ? content : {data: content}, msg);
         })
         .then(() => {
           this._channel.ack(msg)

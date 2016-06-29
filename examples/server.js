@@ -3,15 +3,15 @@ const c1 = require('../index')({
 }).consumer;
 
 c1.consume('q-test:plus', msg => {
-  console.log('q-test:plus receive', (Date.now() - msg.time));
+  // console.log('q-test:plus receive', (Date.now() - msg.time));
   return new Promise((resolve) => {
-    resolve('Hello, World! plus');
+    throw new Error('server error 555');
   });
 });
 
 
 c1.consume('q-test:product', msg => {
-  console.log('q-test:product receive', (Date.now() - msg.time));
+  // console.log('q-test:product receive', (Date.now() - msg.time));
   return new Promise((resolve) => {
     resolve('Hello, World! plus');
   });
